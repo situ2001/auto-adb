@@ -1,5 +1,11 @@
 # auto-adb
 
+## 1.1.2
+
+### Patch Changes
+
+- update README
+
 ## 1.1.1
 
 ### Patch Changes

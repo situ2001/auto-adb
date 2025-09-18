@@ -1,6 +1,6 @@
 # auto-adb
 
-A CLI tool to automatically execute commands when Android devices connect.
+A CLI tool to automatically execute commands when Android devices connect through ADB.
 
 ## Why need this?
 
@@ -44,7 +44,11 @@ And dev hope to run cleanup commands when the this CLI tool exits:
 Thus, the command would be:
 
 ```shell
-npx auto-adb --cmd="adb reverse tcp:8080 tcp:8080" --cmd="adb shell settings put global http_proxy 127.0.0.1:8080" --cmd-clean="adb reverse --remove tcp:8080" --cmd-clean="adb shell settings put global http_proxy :0"
+npx auto-adb \
+--cmd="adb reverse tcp:8080 tcp:8080" \
+--cmd="adb shell settings put global http_proxy 127.0.0.1:8080" \
+--cmd-clean="adb reverse --remove tcp:8080" \
+--cmd-clean="adb shell settings put global http_proxy :0"
 ```
 
 ## Requirements

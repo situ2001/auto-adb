@@ -1,12 +1,12 @@
 # auto-adb
 
-A CLI tool to automatically execute ADB commands when Android devices connect.
+A CLI tool to automatically execute commands when Android devices connect.
 
 ## Why need this?
 
 To reduce repetitive tasks when connecting Android devices to your computer.
 
-> Imagine a scenario where you frequently connect your Android device to your computer for development or testing purposes. Each time you connect the device, you need to run a series of ADB (Android Debug Bridge) commands to set up the environment, such as configuring port forwarding, setting up proxies, or installing necessary apps. This can be tedious and time-consuming.
+> Imagine a scenario where you frequently connect your Android device to your computer for development or testing purposes. Each time you connect the device, you need to run a series of commands to set up the environment, such as configuring port forwarding, setting up proxies, or installing necessary apps. This can be tedious and time-consuming.
 
 ## Features
 

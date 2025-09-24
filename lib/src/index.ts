@@ -7,7 +7,7 @@ import { DeviceStatus } from "./adb-protocol.js";
 import { detectAdbServerRunning, startAdbServer } from "./adb-start.js";
 import { logger } from "./logger.js";
 import { cliArgsSchema } from "./schema.js";
-import { trackDevices } from "./adb-track-devices.js";
+import { DeviceSet, DeviceTracker } from "./adb-track-devices.js";
 
 function parseCliArgs(): ICliArgs {
   program
@@ -68,31 +68,49 @@ async function runApp(args: ICliArgs): Promise<void> {
   };
 
   const executeCleanupCommands = executeAndReturnOnce(async () => {
-    await safelyExecCommandsSequentially(cleanupCommands);
+    const nonAdbCommands = cleanupCommands
+      .map(cmd => cmd.trim())
+      .filter(cmd => !!cmd)
+      .filter(cmd => !detectAdbCommand(cmd));
+
+    const adbCommands = cleanupCommands
+      .map(cmd => cmd.trim())
+      .filter(cmd => !!cmd)
+      .filter(cmd => detectAdbCommand(cmd))
+      .map(cmd => deviceSet.getConnectedDevices().map(device => insertDeviceIdIntoCommand(cmd, device.id)))
+      .flat();
+
+    const newCleanupCommands = [
+      ...nonAdbCommands,
+      ...adbCommands,
+    ];
+
+    await safelyExecCommandsSequentially(newCleanupCommands);
   });
 
   process.on('SIGINT', async () => {
-    logger.info("Running cleanup commands...");
+    logger.info("Received SIGINT, executing cleanup commands and exiting...");
     await executeCleanupCommands();
     process.exit(0);
   });
 
-  const executeCommandsForDevice = async (deviceId: string, cmds: string[]) => {
-    const insertDeviceIdIntoCommand = (cmd: string, deviceId: string): string => {
-      const detectAdbCommand = (cmd: string) => cmd.startsWith('adb ') || cmd.startsWith('adb.exe '); // TODO consider more cases;
+  const detectAdbCommand = (cmd: string) => cmd.startsWith('adb ') || cmd.startsWith('adb.exe '); // TODO consider more cases;
 
-      if (detectAdbCommand(cmd)) {
-        // insert -s <deviceId> after adb
-        const parts = cmd.split(/\s+/);
-        if (parts[0] === 'adb' || parts[0] === 'adb.exe') {
-          parts.splice(1, 0, '-s', deviceId);
-          return parts.join(' ');
-        }
+  const insertDeviceIdIntoCommand = (cmd: string, deviceId: string): string => {
+
+    if (detectAdbCommand(cmd)) {
+      // insert -s <deviceId> after adb
+      const parts = cmd.split(/\s+/);
+      if (parts[0] === 'adb' || parts[0] === 'adb.exe') {
+        parts.splice(1, 0, '-s', deviceId);
+        return parts.join(' ');
       }
-
-      return cmd;
     }
 
+    return cmd;
+  }
+
+  const executeCommandsForDevice = async (deviceId: string, cmds: string[]) => {
     const finalCommands = cmds
       .map(cmd => cmd.trim())
       .filter((cmd): cmd is string => !!cmd)
@@ -122,7 +140,9 @@ async function runApp(args: ICliArgs): Promise<void> {
     }
   }
 
-  trackDevices(adbHost, adbPort, async (devices) => {
+  const tracker = new DeviceTracker(adbHost, adbPort);
+
+  tracker.on('devicesChanged', async (devices) => {
     logger.info(`Connected devices: ${JSON.stringify(devices)}`);
 
     // Execute commands for each connected device
@@ -150,6 +170,11 @@ async function runApp(args: ICliArgs): Promise<void> {
       }
     }
   });
+
+  const deviceSet = new DeviceSet(tracker);
+
+  deviceSet.subscribe();
+  tracker.start();
 }
 
 async function main() {

@@ -1,5 +1,11 @@
 # auto-adb
 
+## 1.2.0
+
+### Minor Changes
+
+- Support running cleanup command for multiple connected Android devices
+
 ## 1.1.2
 
 ### Patch Changes

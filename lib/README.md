@@ -1,5 +1,10 @@
 # auto-adb
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-repo-080f12?style=flat&logo=github&logoColor=white)](https://github.com/situ2001/auto-adb)
+[![npm version](https://img.shields.io/npm/v/auto-adb?style=flat&colorA=080f12&colorB=1fa669)](https://www.npmjs.com/package/auto-adb)
+[![npm download](https://img.shields.io/npm/dt/auto-adb?style=flat&colorA=080f12&colorB=1fa669)](https://www.npmjs.com/package/auto-adb)
+![npm license](https://img.shields.io/npm/l/auto-adb?style=flat&colorA=080f12&colorB=1fa669)
+
 A CLI tool to automatically execute commands when Android devices connect through ADB.
 
 ## Why need this?
@@ -39,7 +44,7 @@ Print a message when device connects and when the program exits:
 npx auto-adb -c "echo Device @{deviceid} connected" -C "echo Cleaning up for device @{deviceid}"
 ```
 
-Open `scrcpy` for the connected device:
+Open `scrcpy` every time an Android device connects:
 
 ```shell
 npx auto-adb -c "scrcpy -s @{deviceid}"
@@ -70,11 +75,3 @@ npx auto-adb \
 ## Requirements
 
 - Node.js 18 or higher
-- ADB installed and added to your system's PATH
-
-## TODOs
-
-- [x] init repo
-- [x] support use `deviceId` in user-specified command
-- [ ] support read config from file
-- [ ] more...

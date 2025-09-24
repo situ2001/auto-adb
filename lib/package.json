@@ -1,6 +1,6 @@
 {
   "name": "auto-adb",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A CLI tool to automatically execute ADB commands when Android devices connect.",
   "type": "module",
   "bin": "./dist/index.js",

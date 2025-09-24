@@ -1,5 +1,11 @@
 # auto-adb
 
+## 2.0.2
+
+### Patch Changes
+
+- include CHANGELOG.md in npm package
+
 ## 2.0.1
 
 ### Patch Changes

@@ -45,10 +45,10 @@ Thus, the command would be:
 
 ```shell
 npx auto-adb \
---cmd="adb -s @{deviceid} reverse tcp:8080 tcp:8080" \
---cmd="adb -s @{deviceid} shell settings put global http_proxy 127.0.0.1:8080" \
---cmd-clean="adb -s @{deviceid} reverse --remove tcp:8080" \
---cmd-clean="adb -s @{deviceid} shell settings put global http_proxy :0"
+-c "adb -s @{deviceid} reverse tcp:8080 tcp:8080" \
+-c "adb -s @{deviceid} shell settings put global http_proxy 127.0.0.1:8080" \
+-C "adb -s @{deviceid} reverse --remove tcp:8080" \
+-C "adb -s @{deviceid} shell settings put global http_proxy :0"
 ```
 
 ## Requirements

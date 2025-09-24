@@ -27,8 +27,8 @@ function parseCliArgs(): ICliArgs {
 
       return parsed;
     })
-    .option('--cmd <commands...>', 'Commands to execute when a device is connected')
-    .option('--cmd-clean <commands...>', 'Commands to execute when the program exits')
+    .option('-c, --cmd <commands...>', 'Commands to execute when a device is connected')
+    .option('-C, --cmd-clean <commands...>', 'Commands to execute when the program exits')
     .parse();
 
   const options = program.opts();

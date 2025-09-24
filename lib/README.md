@@ -31,6 +31,22 @@ Then you can run with `--help` option to see usage.
 
 ## Examples
 
+### Simple example
+
+Print a message when device connects and when the program exits:
+
+```shell
+npx auto-adb -c "echo Device @{deviceid} connected" -C "echo Cleaning up for device @{deviceid}"
+```
+
+Open `scrcpy` for the connected device:
+
+```shell
+npx auto-adb -c "scrcpy -s @{deviceid}"
+```
+
+### For web developers
+
 For example, here is a workflow for web developers who would like to do the following every time an Android device connects:
  
 1. Reverse port `8080` from the Android device to the computer to access MITM server running on the computer.

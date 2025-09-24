@@ -8,6 +8,7 @@ import { detectAdbServerRunning, startAdbServer } from "./adb-start.js";
 import { logger } from "./logger.js";
 import { cliArgsSchema } from "./schema.js";
 import { DeviceSet, DeviceTracker } from "./adb-track-devices.js";
+import { detectCommandHasVar, VAR_KEY_DEVICE_ID, replaceTemplateVars } from "./cmd-var.js";
 
 function parseCliArgs(): ICliArgs {
   program
@@ -68,20 +69,19 @@ async function runApp(args: ICliArgs): Promise<void> {
   };
 
   const executeCleanupCommands = executeAndReturnOnce(async () => {
-    const nonAdbCommands = cleanupCommands
-      .map(cmd => cmd.trim())
-      .filter(cmd => !!cmd)
-      .filter(cmd => !detectAdbCommand(cmd));
-
     const adbCommands = cleanupCommands
       .map(cmd => cmd.trim())
       .filter(cmd => !!cmd)
-      .filter(cmd => detectAdbCommand(cmd))
-      .map(cmd => deviceSet.getConnectedDevices().map(device => insertDeviceIdIntoCommand(cmd, device.id)))
+      .map(cmd =>
+        detectCommandHasVar(cmd, VAR_KEY_DEVICE_ID)
+          ? /* should execute for each connected device if has deviceId var */
+          deviceSet.getConnectedDevices().map(device => processCommandForDevice(cmd, device))
+          : /* otherwise just execute once */
+          cmd
+      )
       .flat();
 
     const newCleanupCommands = [
-      ...nonAdbCommands,
       ...adbCommands,
     ];
 
@@ -94,27 +94,20 @@ async function runApp(args: ICliArgs): Promise<void> {
     process.exit(0);
   });
 
-  const detectAdbCommand = (cmd: string) => cmd.startsWith('adb ') || cmd.startsWith('adb.exe '); // TODO consider more cases;
+  const processCommandForDevice = (cmd: string, device: { id: string, status: DeviceStatus }): string => {
+    const processedCmd = replaceTemplateVars(cmd, {
+      [VAR_KEY_DEVICE_ID]: device.id,
+      // we can add more variables here in the future
+    });
 
-  const insertDeviceIdIntoCommand = (cmd: string, deviceId: string): string => {
+    return processedCmd;
+  };
 
-    if (detectAdbCommand(cmd)) {
-      // insert -s <deviceId> after adb
-      const parts = cmd.split(/\s+/);
-      if (parts[0] === 'adb' || parts[0] === 'adb.exe') {
-        parts.splice(1, 0, '-s', deviceId);
-        return parts.join(' ');
-      }
-    }
-
-    return cmd;
-  }
-
-  const executeCommandsForDevice = async (deviceId: string, cmds: string[]) => {
+  const executeCommandsForDevice = async (device: { id: string, status: DeviceStatus }, cmds: string[]) => {
     const finalCommands = cmds
       .map(cmd => cmd.trim())
       .filter((cmd): cmd is string => !!cmd)
-      .map(cmd => insertDeviceIdIntoCommand(cmd, deviceId));
+      .map(cmd => processCommandForDevice(cmd, device));
 
     await safelyExecCommandsSequentially(finalCommands);
   }
@@ -153,7 +146,7 @@ async function runApp(args: ICliArgs): Promise<void> {
         case DeviceStatus.DEVICE:
           logger.info(`Device connected: ${id} (status: ${status})`);
           // Execute commands for the connected device
-          await executeCommandsForDevice(id, commands);
+          await executeCommandsForDevice(device, commands);
           break;
         case DeviceStatus.OFFLINE:
           logger.warn(`Device ${id} is offline. Skipping command execution.`);

@@ -12,7 +12,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "test": "vitest"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -39,7 +40,8 @@
   "devDependencies": {
     "@types/node": "^24.5.1",
     "tsdown": "^0.15.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "commander": "^14.0.1",

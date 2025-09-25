@@ -1,5 +1,11 @@
 # auto-adb
 
+## 2.0.3
+
+### Patch Changes
+
+- add logo to README
+
 ## 2.0.2
 
 ### Patch Changes

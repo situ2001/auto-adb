@@ -7,6 +7,8 @@
 
 A CLI tool to automatically execute commands when Android devices connect through ADB.
 
+<img src="./auto-adb-logo.svg" alt="auto-adb logo" width="200" height="200">
+
 ## Why need this?
 
 To reduce repetitive tasks when connecting Android devices to your computer.

@@ -1,5 +1,11 @@
 # auto-adb
 
+## 2.1.0
+
+### Minor Changes
+
+- optimize logging
+
 ## 2.0.3
 
 ### Patch Changes

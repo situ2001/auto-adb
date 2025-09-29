@@ -85,7 +85,7 @@ async function runApp(args: ICliArgs): Promise<void> {
       ...adbCommands,
     ];
 
-    await safelyExecCommandsSequentially(newCleanupCommands);
+    await safelyExecCommandsSequentially(newCleanupCommands, { context: 'cleanup' });
   });
 
   process.on('SIGINT', async () => {
@@ -109,28 +109,72 @@ async function runApp(args: ICliArgs): Promise<void> {
       .filter((cmd): cmd is string => !!cmd)
       .map(cmd => processCommandForDevice(cmd, device));
 
-    await safelyExecCommandsSequentially(finalCommands);
+    await safelyExecCommandsSequentially(finalCommands, { context: `device:${device.id}` });
   }
 
-  const safelyExecCommandsSequentially = async (cmds: string[]) => {
-    for (const cmd of cmds) {
-      try {
-        logger.info(`Executing command: ${cmd}`);
-        const { stdout, stderr } = await execa(cmd, { shell: true });
-        if (stdout) {
-          logger.info(`Command "${cmd}" output: ${stdout}`);
-        }
-        if (stderr) {
-          logger.warn(`Command "${cmd}" error output: ${stderr}`);
-        }
-        logger.info(`Command "${cmd}" executed successfully.`);
-      } catch (err) {
-        logger.error(`Failed to execute command "${cmd}": ${(err as Error).message}`);
+  const safelyExecCommandsSequentially = async (cmds: string[], options?: { context?: string }) => {
+    const formatBatchTag = () => options?.context ? `[${options.context}]` : "[cmds]";
+    const formatCmdTag = (index: number) => {
+      const parts = [] as string[];
 
-        // stop loop on error
+      if (options?.context) {
+        parts.push(options.context);
+      }
+
+      parts.push(`cmd#${index + 1}`);
+
+      return `[${parts.join(' ')}]`;
+    };
+
+    if (cmds.length === 0) {
+      logger.info(`${formatBatchTag()} No commands to execute.`);
+      return;
+    }
+
+    let completedCount = 0;
+    let aborted = false;
+
+    for (const [index, cmd] of cmds.entries()) {
+      const tag = formatCmdTag(index);
+
+      try {
+        logger.info(`${tag} Executing: ${cmd}`);
+        const { stdout, stderr } = await execa(cmd, { shell: true });
+
+        const trimmedStdout = stdout?.trim();
+        if (trimmedStdout) {
+          logger.info(`${tag} stdout: ${trimmedStdout}`);
+        }
+
+        const trimmedStderr = stderr?.trim();
+        if (trimmedStderr) {
+          logger.warn(`${tag} stderr: ${trimmedStderr}`);
+        }
+
+        logger.info(`${tag} Completed.`);
+        completedCount += 1;
+      } catch (err) {
+        const error = err as Error & { stderr?: string };
+        const errorMessage = error.message;
+
+        logger.error(`${tag} Failed: ${errorMessage}`);
+
+        const errorStderr = error.stderr?.trim();
+        if (errorStderr) {
+          logger.error(`${tag} stderr: ${errorStderr}`);
+        }
+
+        if (index < cmds.length - 1) {
+          logger.warn(`${formatBatchTag()} Aborting remaining commands because of previous failure.`);
+        }
+
+        aborted = true;
+
         break;
       }
     }
+
+    logger.info(`${formatBatchTag()} Finished ${completedCount}/${cmds.length} commands${aborted ? ' (aborted).' : '.'}`);
   }
 
   const tracker = new DeviceTracker(adbHost, adbPort);
@@ -140,26 +184,10 @@ async function runApp(args: ICliArgs): Promise<void> {
 
     // Execute commands for each connected device
     for (const device of devices) {
-      const { id, status } = device;
+      const { status } = device;
 
-      switch (status) {
-        case DeviceStatus.DEVICE:
-          logger.info(`Device connected: ${id} (status: ${status})`);
-          // Execute commands for the connected device
-          await executeCommandsForDevice(device, commands);
-          break;
-        case DeviceStatus.OFFLINE:
-          logger.warn(`Device ${id} is offline. Skipping command execution.`);
-          continue;
-        case DeviceStatus.UNAUTHORIZED:
-          logger.warn(`Device ${id} is unauthorized. Please authorize it and try again. Skipping command execution.`);
-          continue;
-        case DeviceStatus.AUTHORIZING:
-          logger.warn(`Device ${id} is authorizing. Please wait until it's authorized. Skipping command execution.`);
-          continue;
-        default:
-          logger.warn(`Device ${id} has unknown status "${status}". Skipping command execution.`);
-          continue;
+      if (status === DeviceStatus.DEVICE) {
+        await executeCommandsForDevice(device, commands);
       }
     }
   });

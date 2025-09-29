@@ -12,7 +12,6 @@ function parseDeviceData(deviceData: Buffer): IDeviceInfo[] {
     const trimmedLine = line.trim();
     if (trimmedLine) {
       const parts = trimmedLine.split(/\s+/);
-      logger.info(`Device line parts: ${parts}`);
       if (parts.length === 2) {
         const deviceInfo: IDeviceInfo = {
           id: parts[0]!,
@@ -57,7 +56,7 @@ export class DeviceTracker extends EventEmitter<DeviceTrackerEvents> {
 
   public async start(): Promise<void> {
     if (this.tracking) {
-      logger.warn("Device tracking is already in progress.");
+      logger.debug("Device tracking is already in progress.");
       return;
     }
     this.tracking = true;
@@ -68,8 +67,6 @@ export class DeviceTracker extends EventEmitter<DeviceTrackerEvents> {
 
       // Send track-devices command
       await this.socket.sendCommand(TRACK_DEVICES_COMMAND);
-      logger.info("Successfully started device tracking");
-      logger.info("Listening for device status changes...");
 
       // Read initial device list (if any immediately available)
       const initialDeviceData = await readDeviceData(this.socket);
@@ -81,7 +78,7 @@ export class DeviceTracker extends EventEmitter<DeviceTrackerEvents> {
       this.socket.waitForClose().then(() => {
         this.tracking = false;
         this.emit('close');
-        logger.info("Device tracking stopped.");
+        logger.debug("Device tracking stopped.");
       });
 
     } catch (error) {
@@ -152,7 +149,7 @@ export class DeviceSet {
       }
     }
 
-    logger.info(`Device changes detected: ${JSON.stringify(changeset, null, 2)}`);
+    logger.debug(`Device changes detected: ${JSON.stringify(changeset, null, 2)}`);
 
     // apply changes
     this.devices = [
@@ -161,7 +158,7 @@ export class DeviceSet {
       ...changeset.changed.map(c => c.device)
     ];
 
-    logger.info(`Updated device set: ${JSON.stringify(this.devices, null, 2)}`);
+    logger.debug(`Updated device set: ${JSON.stringify(this.devices, null, 2)}`);
   }
 
   public subscribe(): void {

@@ -1,5 +1,11 @@
 # auto-adb
 
+## 2.2.0
+
+### Minor Changes
+
+- add device-tracker api export so that other devs can import it in their codes.
+
 ## 2.1.0
 
 ### Minor Changes
